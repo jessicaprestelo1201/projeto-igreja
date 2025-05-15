@@ -77,105 +77,135 @@ function embaralharArray(array) {
     .map(({ item }) => item);
 }
 
-export default function Home() {
-  const [livros, setLivros] = useState([]);
-  const [ordemAtual, setOrdemAtual] = useState("embaralhada");
+export default function JogoBiblia() {
+  const [embaralhados, setEmbaralhados] = useState([]);
+  const [respostaUsuario, setRespostaUsuario] = useState([]);
+  const [resultado, setResultado] = useState("");
 
   useEffect(() => {
-    setLivros(embaralharArray(livrosOriginais));
+    setEmbaralhados(embaralharArray(livrosOriginais));
   }, []);
 
-  const ordenar = (criterio) => {
-    let novaLista = [...livros];
-
-    if (criterio === 'nome') {
-      novaLista.sort((a, b) => a.nome.localeCompare(b.nome));
-      setOrdemAtual("nome");
-    } else if (criterio === 'cap') {
-      novaLista.sort((a, b) => b.cap - a.cap);
-      setOrdemAtual("capítulos");
-    } else if (criterio === 'vers') {
-      novaLista.sort((a, b) => b.vers - a.vers);
-      setOrdemAtual("versículos");
-    } else {
-      novaLista = embaralharArray(livrosOriginais);
-      setOrdemAtual("embaralhada");
+  const selecionarLivro = (livro) => {
+    if (respostaUsuario.length < livrosOriginais.length) {
+      setRespostaUsuario([...respostaUsuario, livro]);
     }
+  };
 
-    setLivros(novaLista);
+  const verificarOrdem = () => {
+    const correta = livrosOriginais.map(l => l.sigla);
+    const usuario = respostaUsuario.map(l => l.sigla);
+
+    const estaCorreto = correta.every((sigla, i) => sigla === usuario[i]);
+
+    setResultado(estaCorreto ? "✅ Ordem correta!" : "❌ Ordem incorreta.");
+  };
+
+  const resetar = () => {
+    setRespostaUsuario([]);
+    setResultado("");
+    setEmbaralhados(embaralharArray(livrosOriginais));
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.button} onPress={() => ordenar('nome')}>
-          <Text style={styles.buttonText}>A-Z</Text>
+    <View style={{ flex: 1, padding: 20 }}>
+      <Text style={styles.titulo}>Monte a ordem correta dos livros:</Text>
+
+      {/* Espaços vazios preenchidos pelo usuário */}
+      <View style={styles.linha}>
+        {livrosOriginais.map((_, i) => (
+          <View key={i} style={[styles.card, styles.vazio]}>
+            {respostaUsuario[i] && (
+              <Text style={styles.sigla}>{respostaUsuario[i].sigla}</Text>
+            )}
+          </View>
+        ))}
+      </View>
+
+      {/* Livros embaralhados para clicar */}
+      <Text style={styles.subtitulo}>Clique nos livros:</Text>
+      <View style={styles.linha}>
+        {embaralhados.map((livro, i) => (
+          <TouchableOpacity
+            key={i}
+            style={[styles.card, { backgroundColor: livro.cor }]}
+            onPress={() => selecionarLivro(livro)}
+            disabled={respostaUsuario.includes(livro)}
+          >
+            <Text style={styles.sigla}>{livro.sigla}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Botões de ação */}
+      <View style={styles.botoes}>
+        <TouchableOpacity style={styles.botao} onPress={verificarOrdem}>
+          <Text style={styles.botaoTexto}>Verificar</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => ordenar('cap')}>
-          <Text style={styles.buttonText}>Capítulos</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => ordenar('vers')}>
-          <Text style={styles.buttonText}>Versículos</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button} onPress={() => ordenar('reset')}>
-          <Text style={styles.buttonText}>Embaralhar</Text>
+        <TouchableOpacity style={styles.botao} onPress={resetar}>
+          <Text style={styles.botaoTexto}>Resetar</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
-        {livros.map((livro, index) => (
-          <View key={index} style={[styles.card, { backgroundColor: livro.cor }]}>
-            <Text style={styles.sigla}>{livro.sigla}</Text>
-            <Text style={styles.versiculo}>Cap {livro.cap}</Text>
-            <Text style={styles.versiculo}>Vers {livro.vers}</Text>
-          </View>
-        ))}
-      </ScrollView>
+      {/* Resultado */}
+      {resultado !== "" && (
+        <Text style={styles.resultado}>{resultado}</Text>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    paddingVertical: 10,
-    backgroundColor: '#eee',
-  },
-  button: {
-    backgroundColor: '#333',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    margin: 4,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: '#fff',
+  titulo: {
+    fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 10,
   },
-  container: {
+  subtitulo: {
+    marginTop: 20,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  linha: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    padding: 10,
+    marginVertical: 10,
   },
   card: {
-    width: 70,
-    height: 70,
+    width: 60,
+    height: 60,
     margin: 5,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 3,
+  },
+  vazio: {
+    backgroundColor: '#ccc',
+    borderWidth: 2,
+    borderColor: '#999',
   },
   sigla: {
-    fontSize: 18,
     fontWeight: 'bold',
+    fontSize: 16,
     color: '#fff',
   },
-  versiculo: {
-    fontSize: 10,
+  botoes: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
+  },
+  botao: {
+    backgroundColor: '#333',
+    padding: 10,
+    borderRadius: 8,
+  },
+  botaoTexto: {
     color: '#fff',
+    fontWeight: 'bold',
+  },
+  resultado: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
